@@ -194,6 +194,15 @@ python -m PyInstaller --clean --noconfirm ANMS_Attendance.spec
 
 The executable is created at `dist/ANMS_Attendance.exe`. Its database, face samples, and trained models are stored in a `data/` folder beside the executable; bundled schema, camera cascades, and logo assets are included in the executable.
 
+Launch the exact `.exe` file directly, or run `Run_ANMS_Attendance.bat` from the project root. To create a portable ZIP with the launcher beside the executable:
+
+```powershell
+Copy-Item .\Run_ANMS_Attendance.bat .\dist\Run_ANMS_Attendance.bat -Force
+Compress-Archive -Path .\dist\ANMS_Attendance.exe, .\dist\Run_ANMS_Attendance.bat -DestinationPath .\dist\ANMS_Attendance_Portable.zip -Force
+```
+
+Extract the ZIP before launching. For USB use, copy the EXE and launcher together to a writable folder; runtime data is created next to the EXE.
+
 ---
 
 ## 📖 Step-by-Step User Walkthrough
