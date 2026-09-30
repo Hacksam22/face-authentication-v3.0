@@ -16,7 +16,8 @@ The application follows strict Separation of Concerns (SoC) across five distinct
                │                              │
 ┌──────────────▼──────────────┐ ┌─────────────▼───────────────┐
 │     Vision & AI Layer       │ │       Database Layer        │
-│   - Haar Cascade Detection  │ │  - SQLite Schema & WAL Mode │
+│   - Frontal/Profile Cascades│ │  - SQLite Schema & WAL Mode │
+│   - ±30° Roll Fallback      │ │  - Parameterized Queries    │
 │   - CLAHE Normalization     │ │  - Parameterized Queries    │
 │   - LBPH 1:1 Verification   │ │  - Duplicate Prevention     │
 │   - Holographic HUD Renderer│ │  - Transaction Safety       │
@@ -78,6 +79,12 @@ The system utilizes SQLite with Foreign Keys and Write-Ahead Logging (WAL) enabl
 
 ## 🧠 Face Recognition Approach & Rationale
 
+### Pose-Aware Face Detection
+
+`FaceDetector` combines the frontal Haar cascade with the bundled profile-face cascade, checking mirrored frames for profiles facing either direction. If the upright scans find no face, it retries frontal scans at -30 and +30 degrees and maps detections back to the camera frame. Overlapping boxes from the different passes are suppressed.
+
+Detection does not guarantee identity recognition: LBPH still needs enrollment samples at similar poses, and very small faces contain too little detail for reliable identification. Registration keeps its minimum face-size quality gate to avoid saving low-resolution samples.
+
 ### Algorithm: OpenCV Local Binary Patterns Histograms (LBPH)
 We chose OpenCV's native `cv2.face.LBPHFaceRecognizer` combined with Contrast Limited Adaptive Histogram Equalization (CLAHE) for the following reasons:
 
@@ -116,12 +123,13 @@ facedetection attendance/
 │
 ├── face_recognition/
 │   ├── __init__.py
-│   ├── detector.py           # Haar Cascade detection & CLAHE normalization
+│   ├── detector.py           # Frontal/profile, tilted Haar detection & CLAHE
 │   ├── recognizer.py         # LBPH training, model save/load & 1:1 verification
 │   ├── visualizer.py         # Futuristic holographic HUD overlay rendering
 │   └── cascades/             # Bundled OpenCV Haar XML classifiers
 │       ├── haarcascade_frontalface_default.xml
-│       └── haarcascade_frontalface_alt2.xml
+│       ├── haarcascade_frontalface_alt2.xml
+│       └── haarcascade_profileface.xml
 │
 ├── ui/
 │   ├── __init__.py
@@ -173,6 +181,18 @@ Execute `main.py` directly from the project directory:
 ```bash
 python3 main.py
 ```
+
+### Build the Windows executable
+
+On Windows, install the build dependencies, generate the logo assets, and package the app:
+
+```powershell
+python -m pip install -r requirements-build.txt
+python scripts/build_assets.py
+python -m PyInstaller --clean --noconfirm ANMS_Attendance.spec
+```
+
+The executable is created at `dist/ANMS_Attendance.exe`. Its database, face samples, and trained models are stored in a `data/` folder beside the executable; bundled schema, camera cascades, and logo assets are included in the executable.
 
 ---
 

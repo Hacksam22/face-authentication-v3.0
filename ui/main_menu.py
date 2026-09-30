@@ -4,7 +4,7 @@ Provides the primary landing dashboard with Student, Teacher, and Exit options,
 along with quick administrative stats.
 """
 
-from typing import Callable
+from typing import Callable, Optional
 import customtkinter as ctk
 
 import config
@@ -23,12 +23,14 @@ class MainMenuView(ctk.CTkFrame):
         on_exit: Callable[[], None],
         get_summary_stats: Callable[[], dict],
         on_instant_attendance: Optional[Callable[[], None]] = None,
+        on_view_users: Optional[Callable[[], None]] = None,
         **kwargs,
     ):
         super().__init__(master, fg_color="transparent", **kwargs)
         self.on_select_student = on_select_student
         self.on_select_teacher = on_select_teacher
         self.on_view_records = on_view_records
+        self.on_view_users = on_view_users
         self.on_exit = on_exit
         self.get_summary_stats = get_summary_stats
         self.on_instant_attendance = on_instant_attendance
@@ -159,6 +161,21 @@ class MainMenuView(ctk.CTkFrame):
             command=self.on_view_records,
         )
         records_btn.pack(side="left")
+
+        if self.on_view_users:
+            users_btn = ctk.CTkButton(
+                bottom_bar,
+                text="Registered Users",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                fg_color=config.COLOR_CARD_DARK,
+                hover_color=config.COLOR_CARD_HOVER,
+                border_width=1,
+                border_color=config.COLOR_BORDER,
+                height=40,
+                corner_radius=8,
+                command=self.on_view_users,
+            )
+            users_btn.pack(side="left", padx=12)
 
         if self.on_instant_attendance:
             instant_btn = ctk.CTkButton(

@@ -32,6 +32,15 @@ class CameraManager:
         """Sets a unique seed for the virtual camera to generate distinct faces per user."""
         self._current_subject_seed = seed
 
+    @staticmethod
+    def _is_valid_frame(frame: Optional[np.ndarray]) -> bool:
+        """Reject missing, malformed, and effectively blank camera frames."""
+        if not isinstance(frame, np.ndarray) or frame.ndim < 2 or frame.size == 0:
+            return False
+        if frame.shape[0] < 2 or frame.shape[1] < 2:
+            return False
+        return float(frame.mean()) > 2.0 and float(frame.std()) > 1.0
+
     def start(self, camera_index: Optional[int] = None) -> bool:
         """Initialize and open the camera device or fallback simulator."""
         if camera_index is not None:
@@ -53,8 +62,13 @@ class CameraManager:
                 if cap and cap.isOpened():
                     cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.CAMERA_FRAME_WIDTH)
                     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.CAMERA_FRAME_HEIGHT)
-                    ret, test_frame = cap.read()
-                    if ret and test_frame is not None and test_frame.size > 0:
+                    test_frame = None
+                    for _ in range(5):
+                        ret, candidate_frame = cap.read()
+                        if ret and self._is_valid_frame(candidate_frame):
+                            test_frame = candidate_frame
+                            break
+                    if test_frame is not None:
                         self.cap = cap
                         self.camera_index = idx
                         self.is_running = True
@@ -64,10 +78,12 @@ class CameraManager:
                         )
                         return True
                     else:
-                        logger.warning(f"Camera index {idx} opened but returned no frame.")
+                        logger.warning(f"Camera index {idx} did not return a usable warm-up frame.")
                         cap.release()
             except Exception as e:
                 logger.warning(f"Error accessing physical camera at index {idx}: {e}")
+                if "cap" in locals() and cap:
+                    cap.release()
 
         # If physical camera failed, check if mock fallback is permitted
         if config.MOCK_CAMERA_IF_UNAVAILABLE:
@@ -88,13 +104,17 @@ class CameraManager:
             return False, None
 
         if not self.is_mock and self.cap:
-            ret, frame = self.cap.read()
-            if ret and frame is not None:
+            try:
+                ret, frame = self.cap.read()
+            except Exception as e:
+                logger.warning(f"Error reading physical camera frame: {e}")
+                return False, None
+            if ret and self._is_valid_frame(frame):
                 # Optionally mirror horizontally for natural webcam feel
                 frame = cv2.flip(frame, 1)
                 return True, frame
             else:
-                logger.warning("Physical camera frame drop.")
+                logger.warning("Physical camera returned an unusable frame.")
                 return False, None
 
         # Virtual Webcam Simulator

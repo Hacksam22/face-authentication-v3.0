@@ -5,14 +5,19 @@ are defined here.
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Base Paths
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+SOURCE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(getattr(sys, "_MEIPASS", SOURCE_DIR))
+APP_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else SOURCE_DIR
+DATA_DIR = APP_DIR / "data"
 FACES_DIR = DATA_DIR / "faces"
 MODELS_DIR = DATA_DIR / "models"
 CASCADES_DIR = BASE_DIR / "face_recognition" / "cascades"
+APP_LOGO_PATH = BASE_DIR / "assets" / "app_logo.png"
+APP_ICON_PATH = BASE_DIR / "assets" / "app_logo.ico"
 
 # Ensure runtime directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -26,6 +31,7 @@ DB_PATH = DATA_DIR / "school_attendance.db"
 # Haar Cascade Paths
 PRIMARY_CASCADE_PATH = CASCADES_DIR / "haarcascade_frontalface_default.xml"
 FALLBACK_CASCADE_PATH = CASCADES_DIR / "haarcascade_frontalface_alt2.xml"
+PROFILE_CASCADE_PATH = CASCADES_DIR / "haarcascade_profileface.xml"
 
 # Model File Path
 LBPH_MODEL_PATH = MODELS_DIR / "lbph_face_model.xml"
@@ -53,6 +59,8 @@ DUPLICATE_FACE_THRESHOLD = 40.0
 # Minimum face width/height in pixels (before resizing)
 MIN_FACE_WIDTH = 80
 MIN_FACE_HEIGHT = 80
+DETECTION_MIN_FACE_SIZE = (24, 24)
+DETECTION_SEARCH_SCALE = 0.5
 
 # Blur threshold: Laplacian variance below this value indicates blur
 REGISTRATION_BLUR_THRESHOLD = 80.0

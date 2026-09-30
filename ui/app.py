@@ -22,6 +22,7 @@ from ui.role_menu import RoleMenuView
 from ui.registration_view import RegistrationView
 from ui.attendance_view import AttendanceView
 from ui.records_view import RecordsView
+from ui.users_view import UsersView
 
 logger = get_logger(__name__)
 
@@ -40,6 +41,10 @@ class AttendanceApp(ctk.CTk):
         self.geometry(f"{config.WINDOW_WIDTH}x{config.WINDOW_HEIGHT}")
         self.minsize(980, 640)
         self.configure(fg_color=config.COLOR_BG_DARK)
+        try:
+            self.iconbitmap(str(config.APP_ICON_PATH))
+        except Exception as e:
+            logger.warning(f"Could not set application icon: {e}")
 
         # Initialize core singletons
         logger.info("Initializing core system services...")
@@ -91,6 +96,7 @@ class AttendanceApp(ctk.CTk):
             on_select_student=lambda: self.show_role_menu("student"),
             on_select_teacher=lambda: self.show_role_menu("teacher"),
             on_view_records=self.show_records,
+            on_view_users=self.show_users,
             on_exit=self.on_closing,
             get_summary_stats=self.db.get_system_summary,
             on_instant_attendance=lambda: self.show_attendance("all"),
@@ -153,6 +159,16 @@ class AttendanceApp(ctk.CTk):
             face_recognizer=self.recognizer,
         )
         self._switch_view(view, "Attendance Records & Logs")
+
+    def show_users(self) -> None:
+        """Display all registered students and teachers."""
+        view = UsersView(
+            self.container,
+            db_manager=self.db,
+            on_back=self.show_main_menu,
+            face_recognizer=self.recognizer,
+        )
+        self._switch_view(view, "Registered Users")
 
     def on_closing(self) -> None:
         """Safely release camera hardware and terminate application."""

@@ -462,12 +462,32 @@ class RegistrationView(ctk.CTkFrame):
             if (now - self.last_capture_time) * 1000 >= config.SAMPLE_CAPTURE_DELAY_MS:
                 crop = self.detector.extract_preprocessed_face(frame, detected_box)
                 if crop is not None:
-                    self.captured_crops.append(crop)
-                    self.last_capture_time = now
-                    current_count = len(self.captured_crops)
-                    self.progress_lbl.configure(
-                        text=f"Samples: {current_count} / {target_count}"
-                    )
+                    gray = crop if len(crop.shape) == 2 else cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                    blur_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+                    mean_brightness = float(gray.mean())
+                    if blur_var < config.REGISTRATION_BLUR_THRESHOLD:
+                        self.current_guidance = "Image is too blurry; hold still"
+                        self.expression_prompt_lbl.configure(
+                            text=f"⚠ {self.current_guidance}",
+                            text_color=config.COLOR_NEON_AMBER,
+                        )
+                    elif not (
+                        config.REGISTRATION_BRIGHTNESS_MIN
+                        <= mean_brightness
+                        <= config.REGISTRATION_BRIGHTNESS_MAX
+                    ):
+                        self.current_guidance = "Adjust lighting before capture"
+                        self.expression_prompt_lbl.configure(
+                            text=f"⚠ {self.current_guidance}",
+                            text_color=config.COLOR_NEON_AMBER,
+                        )
+                    else:
+                        self.captured_crops.append(crop)
+                        self.last_capture_time = now
+                        current_count = len(self.captured_crops)
+                        self.progress_lbl.configure(
+                            text=f"Samples: {current_count} / {target_count}"
+                        )
 
         # Draw futuristic registration guide HUD
         HolographicVisualizer.draw_registration_guide(
@@ -548,7 +568,7 @@ class RegistrationView(ctk.CTkFrame):
         role_str = "Student" if self.role == "student" else "Teacher"
         detail_lbl = ctk.CTkLabel(
             card,
-            text=f"The {role_str} record and {len(self.captured_crops)} facial samples have been successfully recorded in the database.",
+            text=f"{role_str} ID: #{self.enrolled_user_id}\nThe record and {len(self.captured_crops)} facial samples have been successfully recorded in the database.",
             font=ctk.CTkFont(size=13),
             text_color=config.COLOR_TEXT_SECONDARY,
             wraplength=340,

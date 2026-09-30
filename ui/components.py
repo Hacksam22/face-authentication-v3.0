@@ -26,13 +26,21 @@ class HeaderBar(ctk.CTkFrame):
         self.brand_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.brand_frame.pack(side="left", padx=24, fill="y")
 
+        logo_image = Image.open(config.APP_LOGO_PATH).convert("RGBA")
+        self._brand_logo = ctk.CTkImage(
+            light_image=logo_image,
+            dark_image=logo_image,
+            size=(42, 42),
+        )
         self.logo_label = ctk.CTkLabel(
             self.brand_frame,
-            text="🎓 ANMS ATTENDANCE",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            text="ANMS ATTENDANCE",
+            image=self._brand_logo,
+            compound="left",
+            font=ctk.CTkFont(size=18, weight="bold"),
             text_color=config.COLOR_NEON_CYAN,
         )
-        self.logo_label.pack(side="left", padx=(0, 12), pady=16)
+        self.logo_label.pack(side="left", padx=(0, 12), pady=10)
 
         self.breadcrumb_label = ctk.CTkLabel(
             self.brand_frame,
